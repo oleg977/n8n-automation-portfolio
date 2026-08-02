@@ -1,0 +1,316 @@
+{
+  "name": "Process_single_request copy",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer ТВОЙ_КЛЮЧ_OPENROUTER"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"deepseek/deepseek-chat\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Ты классифицируешь заявку клиента. Верни только валидный JSON без markdown и пояснений в формате: {\\\"summary\\\":\\\"краткое содержание заявки\\\",\\\"direction\\\":\\\"направление заявки\\\"}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ $json.request }}\"\n    }\n  ],\n  \"temperature\": 0.2\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        176,
+        -16
+      ],
+      "id": "3b8d9e2a-bf18-4945-80b3-6e72d96fcfce",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const raw = $json.choices?.[0]?.message?.content ?? '';\n\nconst cleaned = raw\n  .replace(/^```(?:json)?\\s*/i, '')\n  .replace(/\\s*```$/i, '')\n  .trim();\n\nlet result;\n\ntry {\n  result = JSON.parse(cleaned);\n} catch (error) {\n  throw new Error(`Не удалось распарсить ответ ИИ: ${raw}`);\n}\n\nconst source = $('Start').item.json;\n\nreturn {\n  json: {\n    source_id: source.source_id,\n    summary: result.summary,\n    direction: result.direction,\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        -16
+      ],
+      "id": "2001e2bf-2b43-4387-a41b-934e3f07d257",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wkfwlv2w",
+          "mode": "id"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "phr7sj4vrhd81ru",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "mlmura1zb5z1l6v",
+          "mode": "id"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "source_id": "={{ $json.source_id }}",
+            "summary": "={{ $json.summary }}",
+            "direction": "={{ $json.direction }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "source_id",
+              "displayName": "source_id",
+              "type": "number",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        592,
+        -16
+      ],
+      "id": "ffd4d0f8-982a-4b55-90b6-814198673f4f",
+      "name": "Create a row",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "fn9DxktZhJlFoNkL",
+          "name": "NocoDB Token account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "update",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wkfwlv2w",
+          "mode": "id"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "phr7sj4vrhd81ru",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9fe667w6pzv1uv",
+          "mode": "id"
+        },
+        "id": "={{ $('Start').item.json.source_id }}",
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "обработан"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "request",
+              "displayName": "request",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "options",
+              "options": [
+                {
+                  "name": "обработан",
+                  "value": "обработан"
+                },
+                {
+                  "name": "новый",
+                  "value": "новый"
+                }
+              ],
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        800,
+        -16
+      ],
+      "id": "b4a7ed17-6c4f-45d6-880b-7e2a6196cd82",
+      "name": "Update a row",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "fn9DxktZhJlFoNkL",
+          "name": "NocoDB Token account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "source_id",
+              "type": "number"
+            },
+            {
+              "name": "name"
+            },
+            {
+              "name": "email"
+            },
+            {
+              "name": "request"
+            }
+          ]
+        }
+      },
+      "id": "7a3370de-5717-4238-bcce-a444f8ff30e1",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -32,
+        -16
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "64e76eff-d46b-4543-a120-276f99160716",
+  "meta": {
+    "instanceId": "37ac231348089a1251e3db8338c450d668f30304516c92abe728dd53f0f85255"
+  },
+  "nodeGroups": [],
+  "id": "w0UYaO6ByHKnBOeN",
+  "tags": []
+}
