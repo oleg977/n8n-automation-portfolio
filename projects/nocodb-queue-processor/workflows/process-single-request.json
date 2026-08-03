@@ -10,7 +10,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer ТВОЙ_КЛЮЧ_OPENROUTER"
+              "value": "=Bearer YOUR_OPENROUTER_API_KEY"
             },
             {
               "name": "Content-Type",
