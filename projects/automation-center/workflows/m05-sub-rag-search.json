@@ -1,0 +1,238 @@
+{
+  "name": "m05-sub-rag-search",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/embeddings",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openRouterApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  model: 'qwen/qwen3-embedding-4b',\n  input: $json.question,\n  encoding_format: 'float'\n} }}",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        432,
+        272
+      ],
+      "id": "b63411f9-4af9-43c0-aecf-979e792697d8",
+      "name": "Эмбеддинги Qwen1",
+      "notesInFlow": true,
+      "credentials": {
+        "openRouterApi": {
+          "id": "7UpFDc8bD8q98JmX",
+          "name": "OpenRouter account"
+        }
+      },
+      "notes": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://80b8767d-fca5-4bbe-8cd3-c971e3f951ae.eu-central-1-0.aws.cloud.qdrant.io:6333/collections/rag_documents_2560/points/query",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "=json",
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "jsonBody": "={{ {\n  query: $json.query,\n  limit: $json.limit,\n  with_payload: $json.with_payload,\n  with_vector: $json.with_vector\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        864,
+        272
+      ],
+      "id": "276b6e82-ddd0-4e8b-9f2e-2c18ed11abef",
+      "name": "Поиск Qdrant",
+      "notesInFlow": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YF7Kdxqd6EPEOunR",
+          "name": "Header account Qrant"
+        }
+      },
+      "notes": "HTTP request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const points = $input.first().json.result?.points ?? [];\nconst prepared = $('Start').first().json;\n\nconst context = points\n  .map((point, index) => {\n    const text = point.payload?.text ?? '';\n    const score = Number(point.score ?? 0).toFixed(3);\n\n    return `Фрагмент ${index + 1}, близость ${score}:\\n${text}`;\n  })\n  .join('\\n\\n---\\n\\n');\n\nreturn [{\n  json: {\n    question: prepared.question,\n    context,\n    matches_count: points.length,\n    best_score: points[0]?.score ?? 0\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        272
+      ],
+      "id": "4d530eec-3482-4088-b085-ef5119c1099c",
+      "name": "Подготовить контекст"
+    },
+    {
+      "parameters": {
+        "jsCode": "const vector = $input.first().json.data?.[0]?.embedding;\nconst prepared = $('Start').first().json;\n\nif (!Array.isArray(vector)) {\n  throw new Error('Эмбеддинг вопроса не найден');\n}\n\nif (vector.length !== 2560) {\n  throw new Error(\n    `Размер вектора: ${vector.length}, ожидалось 2560`\n  );\n}\n\nreturn [{\n  json: {\n    question: prepared.question,\n    query: vector.map(Number),\n    limit: 3,\n    with_payload: true,\n    with_vector: false\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        272
+      ],
+      "id": "ca1b280a-7483-4cdd-b035-981350f9e910",
+      "name": "Собрать запрос Qdrant"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "42c708a2-5bf1-4c94-b39f-b864412a954b",
+              "name": "question",
+              "value": "={{ $json.question }}",
+              "type": "string"
+            },
+            {
+              "id": "5f214d3b-7b3b-4f2f-98b1-b1f348126588",
+              "name": "context",
+              "value": "={{ $json.context }}",
+              "type": "string"
+            },
+            {
+              "id": "2e4b68d5-3012-4490-beee-14d0b9e4104a",
+              "name": "matches_count",
+              "value": "={{ $json.matches_count }}",
+              "type": "number"
+            },
+            {
+              "id": "17607b22-d0f0-41cf-a63b-6f2ae473b3ac",
+              "name": "best_score",
+              "value": "={{ $json.best_score }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1280,
+        272
+      ],
+      "id": "69d5af7b-e5d1-41f2-943a-bce8363e99c1",
+      "name": "Return"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "question"
+            }
+          ]
+        }
+      },
+      "id": "e78d0d56-31d7-4b53-b20f-7a49e08d2629",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        224,
+        272
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Эмбеддинги Qwen1": {
+      "main": [
+        [
+          {
+            "node": "Собрать запрос Qdrant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Поиск Qdrant": {
+      "main": [
+        [
+          {
+            "node": "Подготовить контекст",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Собрать запрос Qdrant": {
+      "main": [
+        [
+          {
+            "node": "Поиск Qdrant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Эмбеддинги Qwen1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подготовить контекст": {
+      "main": [
+        [
+          {
+            "node": "Return",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "927964e1-d590-46f8-bbff-87ff27f01d51",
+  "meta": {
+    "instanceId": "37ac231348089a1251e3db8338c450d668f30304516c92abe728dd53f0f85255"
+  },
+  "nodeGroups": [],
+  "id": "pYGfDJTdPYOYTZC7",
+  "tags": []
+}

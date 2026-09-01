@@ -1,0 +1,157 @@
+{
+  "name": "m05-error-handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6f3ef600-2475-438a-8e98-45159069ddd5",
+      "name": "Ошибка workflow",
+      "notesInFlow": true,
+      "notes": "ERROR"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7e8f625f-c476-44e7-a891-da01fd39149c",
+              "name": "recipient_email",
+              "value": "admin@example.com",
+              "type": "string"
+            },
+            {
+              "id": "f6b6d065-592f-4325-a0c0-1eb0e6eda6fa",
+              "name": "subject",
+              "value": "={{ 'Ошибка n8n: ' + ($json.workflow?.name ?? 'неизвестный workflow') }}",
+              "type": "string"
+            },
+            {
+              "id": "7ce60e6a-9a86-444f-b24d-81c2bff5587e",
+              "name": "message",
+              "value": "={{  'Произошла ошибка в n8n.\\n\\n' +  'Workflow: ' + ($json.workflow?.name ?? 'неизвестно') + '\\n' +  'Нода: ' + ($json.execution?.lastNodeExecuted ?? 'не определена') + '\\n' +  'Ошибка: ' + ($json.execution?.error?.message ?? $json.trigger?.error?.message ?? 'нет описания') + '\\n' +  'Ссылка: ' + ($json.execution?.url ?? 'нет ссылки')}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "002c4a8e-ff8c-4244-ae9d-bf6fb505c162",
+      "name": "Подготовить уведомление",
+      "notesInFlow": true,
+      "notes": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "k4LwzJN2gdl3806T",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/k4LwzJN2gdl3806T",
+          "cachedResultName": "m05-sub-email-send"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "recipient_email": "={{ $json.recipient_email }}",
+            "subject": "={{ $json.subject }}",
+            "message": "={{ $json.message }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "recipient_email",
+              "displayName": "recipient_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "4920e7a9-8d0c-4dee-bbf9-3f049aafa7fc",
+      "name": "Отправить уведомление"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Ошибка workflow": {
+      "main": [
+        [
+          {
+            "node": "Подготовить уведомление",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подготовить уведомление": {
+      "main": [
+        [
+          {
+            "node": "Отправить уведомление",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "3bd67860-af46-46af-b7c7-6a0d6692b037",
+  "meta": {
+    "instanceId": "37ac231348089a1251e3db8338c450d668f30304516c92abe728dd53f0f85255"
+  },
+  "nodeGroups": [],
+  "id": "HYPyqsZJvULtY9hw",
+  "tags": []
+}

@@ -1,0 +1,640 @@
+{
+  "name": "m05-automation-center",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -736,
+        272
+      ],
+      "id": "9659d3fd-6b24-4ba8-8a6d-31e440a0b168",
+      "name": "Вопрос пользователя",
+      "webhookId": "09ba88e6-c08f-4c00-b49e-cf30f7d4653b",
+      "notesInFlow": true,
+      "notes": "Chat Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d953de31-4d40-4d9f-be6a-6b44fb9ce215",
+              "name": "=question",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -560,
+        272
+      ],
+      "id": "ed028142-c5ed-4bb9-a549-e5aecf38fb0b",
+      "name": "Подготовить вопрос",
+      "notesInFlow": true,
+      "notes": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Ты — помощник сервиса «АвтоПроцесс».\n\nОтвечай только на основании предоставленного контекста.\nНе используй внешние знания и ничего не придумывай.\n\nЕсли в контексте нет ответа, напиши точно:\n«В документе нет информации для ответа на этот вопрос.»\n\nОтвет дай кратко и на русском языке.\n\nВОПРОС:\n{{ $json.question }}\n\nКОНТЕКСТ:\n{{ $json.context }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -48,
+        272
+      ],
+      "id": "88e3feea-a7bd-45fd-bd1f-997c19010321",
+      "name": "Сформировать ответ"
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3-8b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        464
+      ],
+      "id": "56e825b5-50d8-4477-ba83-d0286d63ab23",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "7UpFDc8bD8q98JmX",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "pYGfDJTdPYOYTZC7",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/pYGfDJTdPYOYTZC7",
+          "cachedResultName": "m05-sub-rag-search"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "question": "={{ $json.question }}",
+            "_firstItem": "={{ $json }}"
+          },
+          "matchingColumns": [
+            "question",
+            "_firstItem"
+          ],
+          "schema": [
+            {
+              "id": "question",
+              "displayName": "question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "_firstItem",
+              "displayName": "_firstItem",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -272,
+        272
+      ],
+      "name": "Call m05-sub-rag-search",
+      "id": "ca0ca897-c9b2-4123-90e8-f1ea9cbe40e9"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "k4LwzJN2gdl3806T",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/k4LwzJN2gdl3806T",
+          "cachedResultName": "m05-sub-email-send"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "recipient_email": "client@example.com",
+            "subject": "=Ответ центра автоматизации",
+            "message": "={{ $json.text }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "recipient_email",
+              "displayName": "recipient_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        272,
+        272
+      ],
+      "id": "50b304ca-56b0-4c25-95c2-a25e833a4bae",
+      "name": "Call m05-sub-email-send"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "67c06cf3-8424-40a9-8623-caa66cd890e5",
+              "name": "=text",
+              "value": "={{ $('Сформировать ответ').first().json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        496,
+        272
+      ],
+      "id": "30b00d38-218b-4a8d-9dbd-d1fb12717d61",
+      "name": "Ответ в чат",
+      "notesInFlow": true,
+      "notes": "Edit Field"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -784,
+        464
+      ],
+      "id": "b5ca0a3b-c7b5-4da9-926e-06803226eae4",
+      "name": "Ежедневный запуск",
+      "notesInFlow": true,
+      "notes": "Shedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8d2f65b7-b1c8-4091-885a-77211832e39e",
+              "name": "question",
+              "value": "Какие условия бесплатной технической поддержки после сдачи проекта?",
+              "type": "string"
+            },
+            {
+              "id": "208f69de-db49-40fd-bc63-2edd0a36da9b",
+              "name": "=sessionId",
+              "value": "={{ 'schedule-' + $now.toFormat('yyyyLLdd-HHmm') }}",
+              "type": "string"
+            },
+            {
+              "id": "0f36d1a2-fd42-4922-8a1f-7adf2b677fcd",
+              "name": "source",
+              "value": "schedule",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -576,
+        464
+      ],
+      "id": "e62c991c-43c1-463d-9451-c046701b6751",
+      "name": "Вопрос по расписанию",
+      "notesInFlow": true,
+      "notes": "Edit Field"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "order_id"
+            },
+            {
+              "name": "amount"
+            },
+            {
+              "name": "description"
+            },
+            {
+              "name": "customer_email"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -800,
+        688
+      ],
+      "id": "d43ed77c-73ca-427f-acec-1932c7b008bf",
+      "name": "Запрос на оплату"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "VrpZnT0G2VfBijWF",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/VrpZnT0G2VfBijWF",
+          "cachedResultName": "m05-sub-payment-link"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ $json.order_id }}",
+            "amount": "={{ $json.amount }}",
+            "description": "={{ $json.description }}",
+            "customer_email": "={{ $json.customer_email }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "customer_email",
+              "displayName": "customer_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -576,
+        688
+      ],
+      "id": "5ac6e972-3454-49fa-a1a8-dac7467d2aed",
+      "name": "Call 'm05-sub-payment-link'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "k4LwzJN2gdl3806T",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/k4LwzJN2gdl3806T",
+          "cachedResultName": "m05-sub-email-send"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "recipient_email": "={{ $json.customer_email }}\n",
+            "subject": "={{ 'Ссылка на оплату заказа №' + $json.order_id }}\n",
+            "message": "={{ `Здравствуйте!\n\nДля оплаты заказа №${$json.order_id} на сумму ${$json.amount} ₽ перейдите по ссылке:\n\n${$json.payment_url}\n\nОписание: ${$json.description}` }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "recipient_email",
+              "displayName": "recipient_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        688
+      ],
+      "id": "c70132fd-53a3-4352-b5dd-1c40793971fe",
+      "name": "Отправить ссылку клиенту"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1580fcf-f0ef-4a7e-881c-f461514e46f0",
+              "name": "=order_id",
+              "value": "={{ $(\"Call 'm05-sub-payment-link'\").item.json.order_id }}",
+              "type": "string"
+            },
+            {
+              "id": "b9e129b2-019c-4187-a401-fcbb1f831f82",
+              "name": "=amount",
+              "value": "={{ $(\"Call 'm05-sub-payment-link'\").item.json.amount }}",
+              "type": "string"
+            },
+            {
+              "id": "76e43289-1a64-4bea-b745-3c43702e76eb",
+              "name": "=customer_email",
+              "value": "={{ $(\"Call 'm05-sub-payment-link'\").item.json.customer_email }}",
+              "type": "string"
+            },
+            {
+              "id": "1578c471-84c1-4bcd-8fc2-0527550518ac",
+              "name": "=payment_url",
+              "value": "={{ $(\"Call 'm05-sub-payment-link'\").item.json.payment_url }}",
+              "type": "string"
+            },
+            {
+              "id": "cf863c05-338e-4b09-8d38-20167a2b7808",
+              "name": "=email_status",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "d8d7fad6-44bc-4f66-9644-48659edf69d0",
+              "name": "=email_job_id",
+              "value": "={{ $json.job_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -128,
+        688
+      ],
+      "id": "ff033568-ceff-4e07-a438-52cf08b6d664",
+      "name": "Результат оплаты"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Вопрос пользователя": {
+      "main": [
+        [
+          {
+            "node": "Подготовить вопрос",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подготовить вопрос": {
+      "main": [
+        [
+          {
+            "node": "Call m05-sub-rag-search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Сформировать ответ",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call m05-sub-rag-search": {
+      "main": [
+        [
+          {
+            "node": "Сформировать ответ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Сформировать ответ": {
+      "main": [
+        [
+          {
+            "node": "Call m05-sub-email-send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call m05-sub-email-send": {
+      "main": [
+        [
+          {
+            "node": "Ответ в чат",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ежедневный запуск": {
+      "main": [
+        [
+          {
+            "node": "Вопрос по расписанию",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Вопрос по расписанию": {
+      "main": [
+        [
+          {
+            "node": "Call m05-sub-rag-search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Запрос на оплату": {
+      "main": [
+        [
+          {
+            "node": "Call 'm05-sub-payment-link'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'm05-sub-payment-link'": {
+      "main": [
+        [
+          {
+            "node": "Отправить ссылку клиенту",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Отправить ссылку клиенту": {
+      "main": [
+        [
+          {
+            "node": "Результат оплаты",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "HYPyqsZJvULtY9hw",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "3d5ce826-af12-48b9-9b1a-0ab5d5d68ad9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "37ac231348089a1251e3db8338c450d668f30304516c92abe728dd53f0f85255"
+  },
+  "nodeGroups": [],
+  "id": "YO6BFwFJe8H93Vjl",
+  "tags": []
+}

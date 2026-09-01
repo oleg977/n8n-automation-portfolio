@@ -3,8 +3,21 @@
 Портфолио готовых проектов автоматизации, созданных с помощью n8n.
 
 ## Projects / Проекты
+### 1. Automation Center / Центр автоматизации
 
-### 1. NocoDB Queue Processor / Обработчик очереди NocoDB
+Итоговый модульный проект курса: RAG-поиск, генерация ответа через OpenRouter, ежедневный запуск, email через UniSender, платёжные ссылки Robokassa и централизованная обработка ошибок.
+
+- RAG и Qdrant — поиск информации в базе знаний
+- OpenRouter — формирование ответа
+- Schedule Trigger — ежедневный запуск в 09:00
+- Sub-workflows — повторное использование общей логики
+- UniSender — отправка писем и уведомлений
+- Robokassa — тестовые платёжные ссылки
+- Error Handler — централизованная обработка ошибок
+
+[Открыть проект](projects/automation-center/README.md)
+
+### 2. NocoDB Queue Processor / Обработчик
 
 Автоматическая обработка записей из очереди NocoDB с использованием основного workflow и вызываемого sub-workflow.
 
@@ -15,7 +28,7 @@
 
 [Открыть проект](projects/nocodb-queue-processor/README.md)
 
-### 2. n8n Backup Automation / Автоматизация резервного копирования n8n
+### 3. n8n Backup Automation / Автоматизация резервного копирования n8n
 
 Production-oriented Bash script for automated backup and integrity verification of n8n and NocoDB.
 
