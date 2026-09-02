@@ -1,0 +1,496 @@
+{
+    "name":  "m04-rag-qdrant-qwen",
+    "nodes":  [
+                  {
+                      "parameters":  {
+
+                                     },
+                      "type":  "n8n-nodes-base.manualTrigger",
+                      "typeVersion":  1,
+                      "position":  [
+                                       0,
+                                       0
+                                   ],
+                      "id":  "7f96721e-5d93-4de9-8e93-7e1be8022b66",
+                      "name":  "When clicking ‘Execute workflow’"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "https://openrouter.ai/api/v1/embeddings",
+                                         "authentication":  "predefinedCredentialType",
+                                         "nodeCredentialType":  "openRouterApi",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "Accept",
+                                                                                         "value":  "application/json"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={{ {\n  model: \u0027qwen/qwen3-embedding-4b\u0027,\n  input: $json.chunk_text,\n  encoding_format: \u0027float\u0027\n} }}",
+                                         "options":  {
+                                                         "allowUnauthorizedCerts":  true
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.4,
+                      "position":  [
+                                       608,
+                                       0
+                                   ],
+                      "id":  "e24a2f83-c58b-452e-b942-f1240acb6f6f",
+                      "name":  "Эмбеддинги Qwen",
+                      "notesInFlow":  true,
+                      "credentials":  {
+                                          "openRouterApi":  {
+                                                                "id":  "REPLACE_WITH_CREDENTIAL_ID",
+                                                                "name":  "Configure openRouterApi"
+                                                            }
+                                      },
+                      "notes":  "HTTP Request1"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const embeddingItems = $input.all();\nconst chunkItems = $(\u0027Нарезка на чанки\u0027).all();\n\nif (embeddingItems.length !== chunkItems.length) {\n  throw new Error(\n    `Количество эмбеддингов (${embeddingItems.length}) ` +\n    `не совпадает с количеством чанков (${chunkItems.length})`\n  );\n}\n\nconst points = embeddingItems.map((item, index) =\u003e {\n  const vector = item.json.data?.[0]?.embedding;\n  const chunk = chunkItems[index].json;\n\n  if (!Array.isArray(vector)) {\n    throw new Error(`У чанка ${chunk.chunk_id} отсутствует embedding`);\n  }\n\n  if (vector.length !== 2560) {\n    throw new Error(\n      `Размер вектора чанка ${chunk.chunk_id}: ${vector.length}, ожидалось 2560`\n    );\n  }\n\n  return {\n    id: chunk.chunk_id,\n    vector: vector.map(Number),\n    payload: {\n      chunk_id: chunk.chunk_id,\n      text: chunk.chunk_text,\n      source: chunk.source\n    }\n  };\n});\n\nreturn [{\n  json: {\n    points,\n    check: {\n      points_count: points.length,\n      vector_size: points[0]?.vector.length ?? 0\n    }\n  }\n}];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       816,
+                                       0
+                                   ],
+                      "id":  "bdf77380-563a-42e9-bf31-8e8f70473219",
+                      "name":  "Собрать точки Qdrant"
+                  },
+                  {
+                      "parameters":  {
+                                         "assignments":  {
+                                                             "assignments":  [
+                                                                                 {
+                                                                                     "id":  "2dd3da0f-4cf0-4bf4-ba4a-144cf364d63a",
+                                                                                     "name":  "document_text",
+                                                                                     "value":  "FAQ сервиса автоматизации «АвтоПроцесс»\n\nСервис «АвтоПроцесс» помогает малому бизнесу автоматизировать повторяющиеся операции. Мы создаём сценарии в n8n, подключаем формы заявок, CRM-системы, электронную почту, Telegram, базы данных и платёжные сервисы. Перед началом работы проводится короткая консультация, на которой специалист уточняет задачу, используемые сервисы и желаемый результат.\n\nЗаявку можно отправить через форму на сайте или через Telegram. В заявке необходимо указать имя, контакт для связи и кратко описать задачу. Специалист отвечает в течение одного рабочего дня. Первичная консультация длится до 45 минут и стоит 2500 рублей. Если клиент заказывает разработку автоматизации, стоимость консультации вычитается из итоговой суммы проекта.\n\nПосле согласования задачи клиент получает план работ, стоимость и ориентировочный срок выполнения. Работа начинается после внесения предоплаты в размере 50 процентов. Оставшаяся сумма оплачивается после демонстрации готового сценария. Обычно разработка занимает от трёх до десяти рабочих дней. Срок зависит от количества интеграций и доступности API у подключаемых сервисов.\n\nПеред запуском специалист тестирует основные и ошибочные варианты выполнения сценария. Клиент получает инструкцию по использованию, схему процесса и экспорт рабочего процесса n8n. После сдачи проекта предоставляется бесплатная техническая поддержка в течение 14 календарных дней. Поддержка включает исправление обнаруженных ошибок, но не добавление новых функций.\n\nЕсли внешний сервис временно недоступен, сценарий выполняет повторные попытки. После нескольких неудачных попыток заявка передаётся менеджеру для ручной проверки. Это защищает данные от потери и помогает вовремя заметить проблему.\n\nКлиент может отменить консультацию или перенести её не позднее чем за 24 часа до начала. При более поздней отмене оплата не возвращается. Если консультацию отменяет специалист, клиенту предлагается другое время или полный возврат оплаты.\n\nДанные клиентов используются только для выполнения заказа. Тестовые данные удаляются через 30 дней после завершения проекта. Пароли, API-ключи и токены не записываются в инструкции и не передаются через обычные сообщения. Для них используются защищённые учётные данные сервисов.\n\nДля расчёта точной стоимости необходимо описать задачу и перечислить сервисы, которые требуется связать. Итоговая цена определяется после консультации и согласования плана работ.",
+                                                                                     "type":  "string"
+                                                                                 }
+                                                                             ]
+                                                         },
+                                         "includeOtherFields":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.set",
+                      "typeVersion":  3.4,
+                      "position":  [
+                                       192,
+                                       0
+                                   ],
+                      "id":  "5f38b59b-5d92-4a88-a032-fe612d4283be",
+                      "name":  "Документ",
+                      "notesInFlow":  true,
+                      "notes":  "Документ"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const text = $input.first().json.document_text;\n\nconst chunkSize = 1200;\nconst overlap = 100;\nconst chunks = [];\n\nfor (\n  let start = 0, index = 0;\n  start \u003c text.length;\n  start += chunkSize - overlap, index++\n) {\n  const chunk = text\n    .slice(start, start + chunkSize)\n    .trim();\n\n  chunks.push({\n    json: {\n      chunk_id: index + 1,\n      chunk_text: chunk,\n      source: \u0027faq_autoprocess\u0027\n    }\n  });\n}\n\nreturn chunks;"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       400,
+                                       0
+                                   ],
+                      "id":  "251826d4-4b41-4787-8bcc-bdcaa5b2b18d",
+                      "name":  "Нарезка на чанки",
+                      "notesInFlow":  false
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "PUT",
+                                         "url":  "https://YOUR_QDRANT_HOST/collections/rag_documents_2560/points?wait=true",
+                                         "authentication":  "genericCredentialType",
+                                         "genericAuthType":  "httpHeaderAuth",
+                                         "sendBody":  true,
+                                         "specifyBody":  "=json",
+                                         "bodyParameters":  {
+                                                                "parameters":  [
+                                                                                   {
+
+                                                                                   }
+                                                                               ]
+                                                            },
+                                         "jsonBody":  "={{ {\n  points: $json.points\n} }}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.4,
+                      "position":  [
+                                       1024,
+                                       0
+                                   ],
+                      "id":  "782c5906-3e4f-4d4e-afb4-4de06c063e54",
+                      "name":  "Qdrant upsert",
+                      "notesInFlow":  true,
+                      "credentials":  {
+                                          "httpHeaderAuth":  {
+                                                                 "id":  "REPLACE_WITH_CREDENTIAL_ID",
+                                                                 "name":  "Configure httpHeaderAuth"
+                                                             }
+                                      },
+                      "notes":  "HTTP request"
+                  },
+                  {
+                      "parameters":  {
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.chatTrigger",
+                      "typeVersion":  1.4,
+                      "position":  [
+                                       0,
+                                       272
+                                   ],
+                      "id":  "9825cced-0de3-415c-ab74-cd272ea989e8",
+                      "name":  "Вопрос пользователя",
+                      "webhookId":  "95205e7f-978c-4c12-9fe5-9cd2c3a959e0",
+                      "notesInFlow":  true,
+                      "notes":  "Chat Trigger"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "https://openrouter.ai/api/v1/embeddings",
+                                         "authentication":  "predefinedCredentialType",
+                                         "nodeCredentialType":  "openRouterApi",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "Accept",
+                                                                                         "value":  "application/json"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={{ {\n  model: \u0027qwen/qwen3-embedding-4b\u0027,\n  input: $json.question,\n  encoding_format: \u0027float\u0027\n} }}",
+                                         "options":  {
+                                                         "allowUnauthorizedCerts":  true
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.4,
+                      "position":  [
+                                       432,
+                                       272
+                                   ],
+                      "id":  "a3b2f7ba-5a98-45ed-a665-445456dd7530",
+                      "name":  "Эмбеддинги Qwen1",
+                      "notesInFlow":  true,
+                      "credentials":  {
+                                          "openRouterApi":  {
+                                                                "id":  "REPLACE_WITH_CREDENTIAL_ID",
+                                                                "name":  "Configure openRouterApi"
+                                                            }
+                                      },
+                      "notes":  "HTTP Request1"
+                  },
+                  {
+                      "parameters":  {
+                                         "assignments":  {
+                                                             "assignments":  [
+                                                                                 {
+                                                                                     "id":  "d953de31-4d40-4d9f-be6a-6b44fb9ce215",
+                                                                                     "name":  "=question",
+                                                                                     "value":  "={{ $json.chatInput }}",
+                                                                                     "type":  "string"
+                                                                                 }
+                                                                             ]
+                                                         },
+                                         "includeOtherFields":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.set",
+                      "typeVersion":  3.4,
+                      "position":  [
+                                       208,
+                                       272
+                                   ],
+                      "id":  "0ec3da1a-c2de-4bf4-a95e-5b5fef5f4fd2",
+                      "name":  "Подготовить вопрос",
+                      "notesInFlow":  true,
+                      "notes":  "Edit Fields"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "https://YOUR_QDRANT_HOST/collections/rag_documents_2560/points/query",
+                                         "authentication":  "genericCredentialType",
+                                         "genericAuthType":  "httpHeaderAuth",
+                                         "sendBody":  true,
+                                         "specifyBody":  "=json",
+                                         "bodyParameters":  {
+                                                                "parameters":  [
+                                                                                   {
+
+                                                                                   }
+                                                                               ]
+                                                            },
+                                         "jsonBody":  "={{ {\n  query: $json.query,\n  limit: $json.limit,\n  with_payload: $json.with_payload,\n  with_vector: $json.with_vector\n} }}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.4,
+                      "position":  [
+                                       864,
+                                       272
+                                   ],
+                      "id":  "95260fd8-ff56-4048-bf2a-97571ee84a02",
+                      "name":  "Поиск Qdrant",
+                      "notesInFlow":  true,
+                      "credentials":  {
+                                          "httpHeaderAuth":  {
+                                                                 "id":  "REPLACE_WITH_CREDENTIAL_ID",
+                                                                 "name":  "Configure httpHeaderAuth"
+                                                             }
+                                      },
+                      "notes":  "HTTP request"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const points = $input.first().json.result?.points ?? [];\nconst prepared = $(\u0027Подготовить вопрос\u0027).first().json;\n\nconst context = points\n  .map((point, index) =\u003e {\n    const text = point.payload?.text ?? \u0027\u0027;\n    const score = Number(point.score ?? 0).toFixed(3);\n\n    return `Фрагмент ${index + 1}, близость ${score}:\\n${text}`;\n  })\n  .join(\u0027\\n\\n---\\n\\n\u0027);\n\nreturn [{\n  json: {\n    question: prepared.question,\n    sessionId: prepared.sessionId,\n    context,\n    matches_count: points.length,\n    best_score: points[0]?.score ?? 0\n  }\n}];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       1072,
+                                       272
+                                   ],
+                      "id":  "446b4ab0-e88b-4834-a012-6f731d2eb7f5",
+                      "name":  "Подготовить контекст"
+                  },
+                  {
+                      "parameters":  {
+                                         "promptType":  "define",
+                                         "text":  "=Ты — помощник сервиса «АвтоПроцесс».\n\nОтвечай только на основании предоставленного контекста.\nНе используй внешние знания и ничего не придумывай.\n\nЕсли в контексте нет ответа, напиши точно:\n«В документе нет информации для ответа на этот вопрос.»\n\nОтвет дай кратко и на русском языке.\n\nВОПРОС:\n{{ $json.question }}\n\nКОНТЕКСТ:\n{{ $json.context }}",
+                                         "batching":  {
+
+                                                      }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.chainLlm",
+                      "typeVersion":  1.9,
+                      "position":  [
+                                       1280,
+                                       272
+                                   ],
+                      "id":  "6e4210ce-d367-4d61-a093-f7bb94e66965",
+                      "name":  "Сформировать ответ"
+                  },
+                  {
+                      "parameters":  {
+                                         "model":  "qwen/qwen3-8b",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+                      "typeVersion":  1,
+                      "position":  [
+                                       1216,
+                                       480
+                                   ],
+                      "id":  "420314e8-06a6-4379-97bb-363e3b6e5a9c",
+                      "name":  "OpenRouter Chat Model",
+                      "credentials":  {
+                                          "openRouterApi":  {
+                                                                "id":  "REPLACE_WITH_CREDENTIAL_ID",
+                                                                "name":  "Configure openRouterApi"
+                                                            }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const vector = $input.first().json.data?.[0]?.embedding;\nconst prepared = $(\u0027Подготовить вопрос\u0027).first().json;\n\nif (!Array.isArray(vector)) {\n  throw new Error(\u0027Эмбеддинг вопроса не найден\u0027);\n}\n\nif (vector.length !== 2560) {\n  throw new Error(\n    `Размер вектора: ${vector.length}, ожидалось 2560`\n  );\n}\n\nreturn [{\n  json: {\n    question: prepared.question,\n    sessionId: prepared.sessionId,\n    query: vector.map(Number),\n    limit: 3,\n    with_payload: true,\n    with_vector: false\n  }\n}];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       640,
+                                       272
+                                   ],
+                      "id":  "d1df5744-3784-402f-a65c-45efff884672",
+                      "name":  "Собрать запрос Qdrant"
+                  }
+              ],
+    "connections":  {
+                        "When clicking ‘Execute workflow’":  {
+                                                                 "main":  [
+                                                                              [
+                                                                                  {
+                                                                                      "node":  "Документ",
+                                                                                      "type":  "main",
+                                                                                      "index":  0
+                                                                                  }
+                                                                              ]
+                                                                          ]
+                                                             },
+                        "Эмбеддинги Qwen":  {
+                                                "main":  [
+                                                             [
+                                                                 {
+                                                                     "node":  "Собрать точки Qdrant",
+                                                                     "type":  "main",
+                                                                     "index":  0
+                                                                 }
+                                                             ]
+                                                         ]
+                                            },
+                        "Документ":  {
+                                         "main":  [
+                                                      [
+                                                          {
+                                                              "node":  "Нарезка на чанки",
+                                                              "type":  "main",
+                                                              "index":  0
+                                                          }
+                                                      ]
+                                                  ]
+                                     },
+                        "Нарезка на чанки":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "Эмбеддинги Qwen",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ]
+                                                          ]
+                                             },
+                        "Собрать точки Qdrant":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Qdrant upsert",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
+                        "Вопрос пользователя":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Подготовить вопрос",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Эмбеддинги Qwen1":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "Собрать запрос Qdrant",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ]
+                                                          ]
+                                             },
+                        "Подготовить вопрос":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Эмбеддинги Qwen1",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Поиск Qdrant":  {
+                                             "main":  [
+                                                          [
+                                                              {
+                                                                  "node":  "Подготовить контекст",
+                                                                  "type":  "main",
+                                                                  "index":  0
+                                                              }
+                                                          ]
+                                                      ]
+                                         },
+                        "Подготовить контекст":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Сформировать ответ",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
+                        "OpenRouter Chat Model":  {
+                                                      "ai_languageModel":  [
+                                                                               [
+                                                                                   {
+                                                                                       "node":  "Сформировать ответ",
+                                                                                       "type":  "ai_languageModel",
+                                                                                       "index":  0
+                                                                                   }
+                                                                               ]
+                                                                           ]
+                                                  },
+                        "Собрать запрос Qdrant":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Поиск Qdrant",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  }
+                    },
+    "active":  false,
+    "settings":  {
+                     "executionOrder":  "v1",
+                     "binaryMode":  "separate",
+                     "availableInMCP":  false
+                 },
+    "versionId":  "7a0f9668-ad69-4b30-8150-1425838ad6f7",
+    "meta":  {
+                 "templateCredsSetupCompleted":  true,
+                 "instanceId":  "37ac231348089a1251e3db8338c450d668f30304516c92abe728dd53f0f85255"
+             },
+    "nodeGroups":  [
+
+                   ],
+    "id":  "yu7osUv0ckXrRuf8",
+    "tags":  [
+
+             ]
+}

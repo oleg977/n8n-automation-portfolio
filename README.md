@@ -16,8 +16,20 @@
 - Error Handler — централизованная обработка ошибок
 
 [Открыть проект](projects/automation-center/README.md)
+### 2. RAG-ассистент на базе Qdrant и Qwen
 
-### 2. NocoDB Queue Processor / Обработчик
+Интеллектуальный помощник, который индексирует собственный документ в векторной базе Qdrant, выполняет семантический поиск и формирует ответ на основании найденного контекста.
+
+- Qwen3-Embedding-4B — создание векторных представлений текста
+- Qdrant Cloud — хранение и семантический поиск
+- OpenRouter — генерация итогового ответа
+- Chunking — разделение документа на смысловые фрагменты
+- RAG — ответы на основании собственной базы знаний
+- HTTP Request — интеграция с Qdrant через REST API
+
+[Открыть проект](projects/rag-qdrant-assistant/README.md)
+
+### 3. NocoDB Queue Processor / Обработчик очереди NocoDB
 
 Автоматическая обработка записей из очереди NocoDB с использованием основного workflow и вызываемого sub-workflow.
 
@@ -28,7 +40,7 @@
 
 [Открыть проект](projects/nocodb-queue-processor/README.md)
 
-### 3. n8n Backup Automation / Автоматизация резервного копирования n8n
+### 4. n8n Backup Automation / Автоматизация резервного копирования n8n
 
 Production-oriented Bash script for automated backup and integrity verification of n8n and NocoDB.
 
