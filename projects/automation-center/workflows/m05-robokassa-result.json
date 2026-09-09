@@ -1,0 +1,630 @@
+{
+  "name": "m05-robokassa-result",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "robokassa-result",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        16,
+        336
+      ],
+      "id": "063e0eed-2125-4844-93fb-ff923b5f1dcd",
+      "name": "Webhook",
+      "webhookId": "aaf782cd-63e8-483f-9611-590d583e2112"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1617e339-98dd-4159-9b3b-5f604d506668",
+              "name": "out_sum",
+              "value": "={{ String($json.body.OutSum ?? '') }}",
+              "type": "string"
+            },
+            {
+              "id": "2a472311-ed51-4712-bbaf-5e97097ceaae",
+              "name": "inv_id",
+              "value": "={{ String($json.body.InvId ?? '') }}",
+              "type": "string"
+            },
+            {
+              "id": "50bb54e7-81dc-4083-9860-d15d58a4ef57",
+              "name": "signature_received",
+              "value": "={{ String($json.body.SignatureValue ?? '').toUpperCase() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        240,
+        336
+      ],
+      "id": "423bd475-39e4-4e18-8e7c-cdda8ce81c1b",
+      "name": "Подготовить данные Robokassa"
+    },
+    {
+      "parameters": {
+        "type": "MD5",
+        "value": "={{ $json.out_sum + ':' + $json.inv_id + ':' + $env.ROBOKASSA_TEST_PASSWORD_2 }}",
+        "dataPropertyName": "signature_expected"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        464,
+        336
+      ],
+      "id": "c0b427da-fcb3-46b3-a071-4e972ec728d3",
+      "name": "Рассчитать подпись Robokassa"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "af371423-b460-41e8-a248-2c8e1e94aab1",
+              "leftValue": "={{ $json.out_sum }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "bd6a5755-4f14-4262-bb4f-1f474f1efc6d",
+              "leftValue": "={{ $json.inv_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "0a245c28-9dbe-4d2e-abf4-4955e4d1f20b",
+              "leftValue": "={{ $json.signature_expected.toUpperCase() }}",
+              "rightValue": "={{ $json.signature_received }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        688,
+        336
+      ],
+      "id": "ceb26289-722b-49d8-848f-4854006cc6c3",
+      "name": "Подпись верна?"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ 'OK' + $('Подготовить данные Robokassa').item.json.inv_id }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": " text/plain; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1776,
+        64
+      ],
+      "id": "e6cfa126-2dd9-4d30-84b5-836fee1acd05",
+      "name": "Подтвердить оплату"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "INVALID_SIGNATURE",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/plain; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        912,
+        432
+      ],
+      "id": "c89c0c86-5dfd-4795-b27e-29e1eb2b527c",
+      "name": "Отклонить запрос"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://big.aktinoleg.ru/api/v3/data/phr7sj4vrhd81ru/ms1665uaj7nb44g/records",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  [\n    {\n      id: $json.records[0].id,\n      fields: {\n        \"Статус\": \"оплачено\"\n      }\n    }\n  ]\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1632,
+        256
+      ],
+      "id": "193681f3-a80b-416b-b8ec-4eb7552bf04a",
+      "name": "Обновить заказ через API",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QlkHS1cuVtozVlpi",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://big.aktinoleg.ru/api/v3/data/phr7sj4vrhd81ru/ms1665uaj7nb44g/records",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "where",
+              "value": "={{ '(\"Номер заказа\",eq,' + JSON.stringify(String($json.inv_id)) + ')' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        912,
+        240
+      ],
+      "id": "a9e15cd6-d0cd-4076-95f8-8a4a41fc2062",
+      "name": "Найти заказ по номеру",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "QlkHS1cuVtozVlpi",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e2157401-17eb-4b1d-bfc5-2555bce71a29",
+              "leftValue": "={{ $json.records.length }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1136,
+        240
+      ],
+      "id": "e34e3760-506b-40fc-a168-ebc67d488f0a",
+      "name": "Заказ найден?"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "ORDER_NOT_UNIQUE",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/plain; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1136,
+        400
+      ],
+      "id": "fc69ea0b-d171-4406-9480-f05c5313032e",
+      "name": "Заказ не определён"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "AMOUNT_MISMATCH",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/plain; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1392,
+        416
+      ],
+      "id": "96a55601-106a-4299-ba94-d7f3acfdcfcc",
+      "name": "Сумма не совпадает"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f5eccca4-316e-4b7a-905d-bc55414cae9f",
+              "leftValue": "={{ Number($json.records[0].fields[\"Сумма\"]) }}",
+              "rightValue": "={{ Number($('Подготовить данные Robokassa').item.json.out_sum) }}",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1360,
+        144
+      ],
+      "id": "4f1c8e46-192f-449e-b351-07bc4495f3f6",
+      "name": "Сумма совпадает?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "eee8b499-c270-4448-9022-fbeb69745b6b",
+              "leftValue": "={{ $json.records[0].fields[\"Статус\"] }}",
+              "rightValue": "оплачено",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1536,
+        80
+      ],
+      "id": "ad182157-b1c6-4bba-9c5d-f5bd5f38e4da",
+      "name": "Заказ уже оплачён?"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "k4LwzJN2gdl3806T",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/k4LwzJN2gdl3806T",
+          "cachedResultName": "m05-sub-email-send"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "recipient_email": "={{ $('Найти заказ по номеру').item.json.records[0].fields[\"Электронная почта\"] }}",
+            "subject": "={{ 'Тест: подтверждение оплаты заказа №' + $('Подготовить данные Robokassa').item.json.inv_id }}",
+            "message": "={{ 'Здравствуйте! Тестовая оплата заказа №' + $('Подготовить данные Robokassa').item.json.inv_id + ' на сумму ' + $('Подготовить данные Robokassa').item.json.out_sum + ' ₽ успешно обработана. Это проверочное письмо, реального списания средств не было. Олег.' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "recipient_email",
+              "displayName": "recipient_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2064,
+        256
+      ],
+      "id": "c915e5ed-7529-484f-bb23-0e0c78937619",
+      "name": "Отправить подтверждение клиенту"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ 'OK' + $('Подготовить данные Robokassa').item.json.inv_id }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": " text/plain; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1840,
+        256
+      ],
+      "id": "e5c219ac-3b17-401f-bf50-fee0aeb67cdc",
+      "name": "Подтвердить первую оплату"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Подготовить данные Robokassa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подготовить данные Robokassa": {
+      "main": [
+        [
+          {
+            "node": "Рассчитать подпись Robokassa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Рассчитать подпись Robokassa": {
+      "main": [
+        [
+          {
+            "node": "Подпись верна?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подпись верна?": {
+      "main": [
+        [
+          {
+            "node": "Найти заказ по номеру",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Отклонить запрос",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Обновить заказ через API": {
+      "main": [
+        [
+          {
+            "node": "Подтвердить первую оплату",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Найти заказ по номеру": {
+      "main": [
+        [
+          {
+            "node": "Заказ найден?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Заказ найден?": {
+      "main": [
+        [
+          {
+            "node": "Сумма совпадает?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Заказ не определён",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Сумма совпадает?": {
+      "main": [
+        [
+          {
+            "node": "Заказ уже оплачён?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Сумма не совпадает",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Заказ уже оплачён?": {
+      "main": [
+        [
+          {
+            "node": "Подтвердить оплату",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Обновить заказ через API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подтвердить оплату": {
+      "main": [
+        []
+      ]
+    },
+    "Подтвердить первую оплату": {
+      "main": [
+        [
+          {
+            "node": "Отправить подтверждение клиенту",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b682aa6a-b97d-4f0d-9522-a275951de51d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "37ac231348089a1251e3db8338c450d668f30304516c92abe728dd53f0f85255"
+  },
+  "nodeGroups": [],
+  "id": "PSXMlkYOpBXwZJJh",
+  "tags": []
+}

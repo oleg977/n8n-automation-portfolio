@@ -1,123 +1,117 @@
 {
-    "name":  "m05-sub-payment-link",
-    "nodes":  [
-                  {
-                      "parameters":  {
-                                         "workflowInputs":  {
-                                                                "values":  [
-                                                                               {
-                                                                                   "name":  "order_id"
-                                                                               },
-                                                                               {
-                                                                                   "name":  "amount"
-                                                                               },
-                                                                               {
-                                                                                   "name":  "description"
-                                                                               },
-                                                                               {
-                                                                                   "name":  "customer_email"
-                                                                               }
-                                                                           ]
-                                                            }
-                                     },
-                      "type":  "n8n-nodes-base.executeWorkflowTrigger",
-                      "typeVersion":  1.2,
-                      "position":  [
-                                       0,
-                                       0
-                                   ],
-                      "id":  "de6f3f67-df88-4cca-8ead-534b372c19d3",
-                      "name":  "When Executed by Another Workflow"
-                  },
-                  {
-                      "parameters":  {
-                                         "type":  "MD5",
-                                         "value":  "={{ \u0027YOUR_MERCHANT_LOGIN:\u0027 + Number($json.amount).toFixed(2) + \u0027:\u0027 + $json.order_id + \u0027:YOUR_PASSWORD_1\u0027 }}",
-                                         "dataPropertyName":  "signature"
-                                     },
-                      "type":  "n8n-nodes-base.crypto",
-                      "typeVersion":  2,
-                      "position":  [
-                                       208,
-                                       0
-                                   ],
-                      "id":  "5c7f3495-554f-4b8f-a304-8568992627a6",
-                      "name":  "Создать подпись Robokassa",
-                      "notesInFlow":  true,
-                      "notes":  "Crypto"
-                  },
-                  {
-                      "parameters":  {
-                                         "assignments":  {
-                                                             "assignments":  [
-                                                                                 {
-                                                                                     "id":  "10dd029c-e149-4ed9-aa8f-04917075b60e",
-                                                                                     "name":  "=payment_url",
-                                                                                     "value":  "={{\n  \u0027https://auth.robokassa.ru/Merchant/Index.aspx\u0027\n  + \u0027?MerchantLogin=YOUR_MERCHANT_LOGIN\u0027\n  + \u0027\u0026OutSum=\u0027 + encodeURIComponent(Number($json.amount).toFixed(2))\n  + \u0027\u0026InvId=\u0027 + encodeURIComponent(String($json.order_id))\n  + \u0027\u0026Description=\u0027 + encodeURIComponent($json.description)\n  + \u0027\u0026SignatureValue=\u0027 + encodeURIComponent($json.signature)\n  + \u0027\u0026Email=\u0027 + encodeURIComponent($json.customer_email)\n  + \u0027\u0026Culture=ru\u0027\n  + \u0027\u0026IsTest=1\u0027\n}}",
-                                                                                     "type":  "string"
-                                                                                 }
-                                                                             ]
-                                                         },
-                                         "includeOtherFields":  true,
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "type":  "n8n-nodes-base.set",
-                      "typeVersion":  3.4,
-                      "position":  [
-                                       416,
-                                       0
-                                   ],
-                      "id":  "7fc65501-6fcd-45f4-9e2f-ee40ce384c57",
-                      "name":  "Собрать платёжную ссылку",
-                      "notesInFlow":  true,
-                      "notes":  "Edit Field"
-                  }
-              ],
-    "pinData":  {
-
-                },
-    "connections":  {
-                        "When Executed by Another Workflow":  {
-                                                                  "main":  [
-                                                                               [
-                                                                                   {
-                                                                                       "node":  "Создать подпись Robokassa",
-                                                                                       "type":  "main",
-                                                                                       "index":  0
-                                                                                   }
-                                                                               ]
-                                                                           ]
-                                                              },
-                        "Создать подпись Robokassa":  {
-                                                          "main":  [
-                                                                       [
-                                                                           {
-                                                                               "node":  "Собрать платёжную ссылку",
-                                                                               "type":  "main",
-                                                                               "index":  0
-                                                                           }
-                                                                       ]
-                                                                   ]
-                                                      }
-                    },
-    "active":  true,
-    "settings":  {
-                     "executionOrder":  "v1",
-                     "binaryMode":  "separate",
-                     "availableInMCP":  false,
-                     "errorWorkflow":  "HYPyqsZJvULtY9hw"
-                 },
-    "versionId":  "ef2cf900-6887-4f34-8624-43f757c83769",
-    "meta":  {
-                 "instanceId":  "37ac231348089a1251e3db8338c450d668f30304516c92abe728dd53f0f85255"
-             },
-    "nodeGroups":  [
-
-                   ],
-    "id":  "VrpZnT0G2VfBijWF",
-    "tags":  [
-
-             ]
+  "name": "m05-sub-payment-link",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "order_id"
+            },
+            {
+              "name": "amount"
+            },
+            {
+              "name": "description"
+            },
+            {
+              "name": "customer_email"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "de6f3f67-df88-4cca-8ead-534b372c19d3",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "type": "MD5",
+        "value": "{{ \n  'YOUR_MERCHANT_LOGIN:'\n  + Number($json.amount).toFixed(2)\n  + ':'\n  + String($json.order_id)\n  + ':'\n  + $env.ROBOKASSA_TEST_PASSWORD_1\n}}",
+        "dataPropertyName": "signature"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "5c7f3495-554f-4b8f-a304-8568992627a6",
+      "name": "Создать подпись Robokassa",
+      "notesInFlow": true,
+      "notes": "Crypto"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "10dd029c-e149-4ed9-aa8f-04917075b60e",
+              "name": "payment_url",
+              "value": "{{\n  'https://auth.robokassa.ru/Merchant/Index.aspx'\n  + '?MerchantLogin=aktinolegservice'\n  + '&OutSum=' + encodeURIComponent(Number($json.amount).toFixed(2))\n  + '&InvId=' + encodeURIComponent(String($json.order_id))\n  + '&Description=' + encodeURIComponent($json.description)\n  + '&SignatureValue=' + encodeURIComponent($json.signature)\n  + '&Email=' + encodeURIComponent($json.customer_email)\n  + '&Culture=ru'\n  + '&IsTest=1'\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "7fc65501-6fcd-45f4-9e2f-ee40ce384c57",
+      "name": "Собрать платёжную ссылку",
+      "notesInFlow": true,
+      "notes": "Edit Field"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Создать подпись Robokassa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Создать подпись Robokassa": {
+      "main": [
+        [
+          {
+            "node": "Собрать платёжную ссылку",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "HYPyqsZJvULtY9hw",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "ef2cf900-6887-4f34-8624-43f757c83769",
+  "meta": {
+    "instanceId": "37ac231348089a1251e3db8338c450d668f30304516c92abe728dd53f0f85255"
+  },
+  "nodeGroups": [],
+  "id": "VrpZnT0G2VfBijWF",
+  "tags": []
 }
